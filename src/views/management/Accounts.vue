@@ -20,6 +20,19 @@
           </template>
         </el-table-column>
       </el-table>
+      <!-- 新增分页 -->
+      <div class="table-footer">
+        <el-pagination
+          background
+          layout="total, sizes, prev, pager, next, jumper"
+          :current-page="page"
+          :page-size="pageSize"
+          :page-sizes="[10, 20, 50]"
+          :total="total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
     </el-card>
 
     <!-- 新建/编辑弹窗 -->
@@ -53,6 +66,10 @@ import type { Account } from '@/types/trade'
 
 const loading = ref(false)
 const list = ref<Account[]>([])
+// 分页状态
+const page = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
 const dialogVisible = ref(false)
 const formRef = ref()
@@ -74,11 +91,23 @@ const rules = {
 const fetchList = async () => {
   loading.value = true
   try {
-    const res = await getAccountList()
+    const res = await getAccountList({ page: page.value - 1, limit: pageSize.value })
     list.value = res.data?.items || []
+    total.value = res.data?.total ?? 0
   } finally {
     loading.value = false
   }
+}
+
+// 分页事件处理
+const handleSizeChange = (val: number) => {
+  pageSize.value = val
+  page.value = 1
+  fetchList()
+}
+const handleCurrentChange = (val: number) => {
+  page.value = val
+  fetchList()
 }
 
 const openCreateDialog = () => {
@@ -103,10 +132,10 @@ const onSubmit = async () => {
     submitLoading.value = true
     if (editingId.value) {
       const res = await updateAccount(editingId.value, { ...form.value })
-      if (res.code === 200) ElMessage.success('更新成功')
+      if (res.code === 0 || res.code === 200) ElMessage.success('更新成功')
     } else {
       const res = await createAccount({ ...form.value })
-      if (res.code === 200) ElMessage.success('创建成功')
+      if (res.code === 0 || res.code === 200) ElMessage.success('创建成功')
     }
     dialogVisible.value = false
     await fetchList()
@@ -121,7 +150,7 @@ const onDelete = async (row: Account) => {
   try {
     await ElMessageBox.confirm(`确认删除账户 “${row.name}” 吗？`, '提示', { type: 'warning' })
     const res = await deleteAccount(row.id)
-    if (res.code === 200) {
+    if (res.code === 0 || res.code === 200) {
       ElMessage.success('删除成功')
       await fetchList()
     }
@@ -150,6 +179,11 @@ onMounted(fetchList)
 .page-header {
   display: flex;
   justify-content: flex-start;
+}
+.table-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 .dialog-footer {
   display: flex;
