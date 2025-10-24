@@ -10,3 +10,15 @@ export interface LoginResponseData {
   token: string
   userInfo?: UserInfo
 }
+
+// 注册请求与响应类型
+export interface RegisterForm {
+  username: string
+  password: string
+  email?: string
+}
+
+export interface RegisterResponseData {
+  userInfo?: UserInfo
+  message?: string
+}

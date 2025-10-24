@@ -10,8 +10,11 @@
           <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :loading="loading" @click="onSubmit" class="submit-btn">登录</el-button>
+          <el-button type="primary" size="large" round :loading="loading" @click="onSubmit" class="submit-btn">登录</el-button>
         </el-form-item>
+        <div class="link-row">
+          <el-button link @click="goRegister">没有账号？去注册</el-button>
+        </div>
       </el-form>
     </el-card>
   </div>
@@ -20,6 +23,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 
 // 登录表单数据
@@ -32,6 +36,7 @@ const form = ref<LoginForm>({ username: '', password: '' })
 const formRef = ref()
 const loading = ref(false)
 
+const router = useRouter()
 const userStore = useUserStore()
 
 // 点击登录时，调用 Pinia store 的 login action
@@ -51,6 +56,10 @@ const onSubmit = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const goRegister = () => {
+  router.push('/register')
 }
 </script>
 
@@ -74,5 +83,27 @@ const onSubmit = async () => {
 
 .submit-btn {
   width: 100%;
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  color: #fff;
+  box-shadow: 0 6px 12px rgba(79, 70, 229, 0.35);
+  transition: transform 0.08s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.submit-btn:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 8px 16px rgba(79, 70, 229, 0.4);
+}
+.submit-btn:active {
+  transform: translateY(1px);
+}
+.submit-btn[disabled] {
+  filter: grayscale(0.2) brightness(0.95);
+  box-shadow: none;
+}
+.link-row {
+  display: flex;
+  justify-content: center;
 }
 </style>

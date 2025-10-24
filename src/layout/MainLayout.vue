@@ -4,7 +4,20 @@
     <!-- 左侧菜单栏 -->
     <el-aside width="200px" class="layout-aside">
       <div class="brand">Helmsman</div>
-      <!-- TODO: 后续补充实际菜单 -->
+      <el-menu
+        class="side-menu"
+        :default-active="route.path"
+        router
+        background-color="#0f172a"
+        text-color="#ffffff"
+        active-text-color="#60a5fa"
+      >
+        <el-menu-item index="/dashboard">仪表盘</el-menu-item>
+        <el-menu-item index="/journal/list">交易日志</el-menu-item>
+        <el-menu-item index="/management/accounts">账户管理</el-menu-item>
+        <el-menu-item index="/management/strategies">策略管理</el-menu-item>
+        <el-menu-item index="/management/tags">标签管理</el-menu-item>
+      </el-menu>
     </el-aside>
 
     <el-container>
@@ -20,7 +33,7 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item>个人中心</el-dropdown-item>
-                <el-dropdown-item divided>退出登录</el-dropdown-item>
+                <el-dropdown-item divided @click="onLogout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -36,8 +49,26 @@
 </template>
 
 <script setup lang="ts">
-// 布局组件使用 Element Plus 进行基础结构搭建
-// 退出登录的逻辑将在后续与 Pinia store 结合实现
+import { ElMessageBox, ElMessage } from 'element-plus'
+import { useUserStore } from '@/store/user'
+import { useRoute } from 'vue-router'
+
+const userStore = useUserStore()
+const route = useRoute()
+
+const onLogout = async () => {
+  try {
+    await ElMessageBox.confirm('确定要退出登录吗？', '确认退出', {
+      type: 'warning',
+      confirmButtonText: '退出',
+      cancelButtonText: '取消'
+    })
+    await userStore.logout()
+    ElMessage.success('已退出登录')
+  } catch (e) {
+    // 点击取消时会进入 catch，不做处理
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -78,4 +109,10 @@
   background: #f8fafc; /* slate-50 */
   padding: 16px;
 }
+
+.side-menu {
+  width: 100%;
+  border-right: none;
+}
+
 </style>
