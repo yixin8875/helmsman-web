@@ -24,6 +24,18 @@
           </template>
         </el-table-column>
       </el-table>
+    <div class="table-footer">
+      <el-pagination
+        background
+        layout="total, sizes, prev, pager, next, jumper"
+        :current-page="page"
+        :page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
     </el-card>
 
     <el-dialog v-model="dialogVisible" :title="editingId ? '编辑标签' : '新建标签'" width="520px" destroy-on-close>
@@ -53,6 +65,9 @@ import type { Tag } from '@/types/trade'
 
 const loading = ref(false)
 const list = ref<Tag[]>([])
+const page = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
 const dialogVisible = ref(false)
 const formRef = ref()
@@ -69,8 +84,9 @@ const rules = {
 const fetchList = async () => {
   loading.value = true
   try {
-    const res = await getTagList()
+    const res = await getTagList({ page: page.value - 1, limit: pageSize.value })
     list.value = res.data?.items || []
+    total.value = res.data?.total ?? 0
   } finally {
     loading.value = false
   }
@@ -93,11 +109,11 @@ const onSubmit = async () => {
     await formRef.value?.validate()
     submitLoading.value = true
     if (editingId.value) {
-      const res = await updateTag(editingId.value, { ...form.value })
-      if (res.code === 200) ElMessage.success('更新成功')
+      const res = await updateTag(editingId.value, { id: editingId.value, ...form.value })
+      if (res.code === 0 || res.code === 200) ElMessage.success('更新成功')
     } else {
       const res = await createTag({ ...form.value })
-      if (res.code === 200) ElMessage.success('创建成功')
+      if (res.code === 0 || res.code === 200) ElMessage.success('创建成功')
     }
     dialogVisible.value = false
     await fetchList()
@@ -110,7 +126,7 @@ const onDelete = async (row: Tag) => {
   try {
     await ElMessageBox.confirm(`确认删除标签 “${row.name}” 吗？`, '提示', { type: 'warning' })
     const res = await deleteTag(row.id)
-    if (res.code === 200) {
+    if (res.code === 0 || res.code === 200) {
       ElMessage.success('删除成功')
       await fetchList()
     }
@@ -127,6 +143,17 @@ const formatDate = (val?: string) => {
   }
 }
 
+const handleSizeChange = (val: number) => {
+  pageSize.value = val
+  page.value = 1
+  fetchList()
+}
+
+const handleCurrentChange = (val: number) => {
+  page.value = val
+  fetchList()
+}
+
 onMounted(fetchList)
 </script>
 
@@ -140,7 +167,7 @@ onMounted(fetchList)
   display: flex;
   justify-content: flex-start;
 }
-.dialog-footer {
+.table-footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
