@@ -48,7 +48,7 @@ const routes: RouteRecordRaw[] = [
         component: Tags
       },
       {
-        path: 'journal/list',
+        path: 'journal',
         name: 'JournalList',
         component: TradeList
       },
@@ -61,6 +61,11 @@ const routes: RouteRecordRaw[] = [
         path: 'journal/edit/:id',
         name: 'JournalEdit',
         component: TradeForm
+      },
+      {
+        path: 'journal/view/:id',
+        name: 'JournalView',
+        component: () => import('@/views/journal/TradeDetail.vue')
       }
     ]
   }

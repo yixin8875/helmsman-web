@@ -89,6 +89,16 @@
                 <el-option v-for="t in dataStore.tags" :key="t.id" :label="t.name" :value="t.id" />
               </el-select>
             </el-form-item>
+            <el-form-item label="预交易快照">
+              <el-upload :file-list="preFiles" :auto-upload="false" :limit="1" accept="image/*" :on-change="onPreFileChange" :before-upload="() => false" list-type="picture-card">
+                <el-icon><i class="el-icon-plus"></i></el-icon>
+              </el-upload>
+            </el-form-item>
+            <el-form-item label="后交易快照">
+              <el-upload :file-list="postFiles" :auto-upload="false" :limit="1" accept="image/*" :on-change="onPostFileChange" :before-upload="() => false" list-type="picture-card">
+                <el-icon><i class="el-icon-plus"></i></el-icon>
+              </el-upload>
+            </el-form-item>
           </el-form>
         </el-tab-pane>
       </el-tabs>
@@ -107,7 +117,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useDataStore } from '@/store/data'
-import { createTrade, updateTrade, getTradeDetail } from '@/api/trade'
+import { createTrade, updateTrade, getTradeDetail, createSnapshot, createTradeTag, getTradeTagsByTradeIds } from '@/api/trade'
 import type { Trade, TradeSide } from '@/types/trade'
 
 const router = useRouter()
@@ -117,6 +127,11 @@ const dataStore = useDataStore()
 const activeTab = ref('basic')
 const saving = ref(false)
 const pnlTouched = ref(false)
+
+const preFiles = ref<any[]>([])
+const postFiles = ref<any[]>([])
+const preImage = ref<string>('')
+const postImage = ref<string>('')
 
 const form = ref<Trade>({
   account_id: 0,
@@ -144,7 +159,7 @@ const form = ref<Trade>({
 const isEdit = () => !!route.params.id
 
 const onCancel = () => {
-  router.push('/journal/list')
+  router.push('/journal')
 }
 
 const computePnl = () => {
@@ -182,18 +197,68 @@ const loadDetailIfNeeded = async () => {
   }
 }
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+const onPreFileChange = async (file: any) => {
+  if (file && file.raw) {
+    preImage.value = await fileToBase64(file.raw as File)
+    preFiles.value = [file]
+  }
+}
+
+const onPostFileChange = async (file: any) => {
+  if (file && file.raw) {
+    postImage.value = await fileToBase64(file.raw as File)
+    postFiles.value = [file]
+  }
+}
+
 const onSave = async () => {
   try {
     saving.value = true
     if (isEdit()) {
       const id = Number(route.params.id)
       const res = await updateTrade(id, form.value)
-      if (res.code === 200) ElMessage.success('更新成功')
+      if (res.code === 200 || res.code === 0) {
+        // 同步标签（新增缺失的关系）
+        if (form.value.tag_ids && form.value.tag_ids.length) {
+          const existing = await getTradeTagsByTradeIds([id])
+          const existingIds = new Set((existing.data?.items || []).map((x) => x.tagID))
+          for (const tid of form.value.tag_ids) {
+            if (!existingIds.has(tid)) {
+              await createTradeTag(id, tid)
+            }
+          }
+        }
+        // 快照上传（可选）
+        if (preImage.value) await createSnapshot(id, preImage.value, 'pre')
+        if (postImage.value) await createSnapshot(id, postImage.value, 'post')
+        ElMessage.success('更新成功')
+      }
     } else {
       const res = await createTrade(form.value)
-      if (res.code === 200) ElMessage.success('创建成功')
+      if (res.code === 200 || res.code === 0) {
+        const newId = (res.data as any)?.id
+        // 标签关系
+        if (newId && form.value.tag_ids && form.value.tag_ids.length) {
+          for (const tid of form.value.tag_ids) {
+            await createTradeTag(newId, tid)
+          }
+        }
+        // 快照上传
+        if (newId && preImage.value) await createSnapshot(newId, preImage.value, 'pre')
+        if (newId && postImage.value) await createSnapshot(newId, postImage.value, 'post')
+        ElMessage.success('创建成功')
+      }
     }
-    router.push('/journal/list')
+    router.push('/journal')
   } catch (e) {} finally {
     saving.value = false
   }

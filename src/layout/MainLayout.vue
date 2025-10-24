@@ -13,7 +13,7 @@
         active-text-color="#60a5fa"
       >
         <el-menu-item index="/dashboard">仪表盘</el-menu-item>
-        <el-menu-item index="/journal/list">交易日志</el-menu-item>
+        <el-menu-item index="/journal">交易日志</el-menu-item>
         <el-menu-item index="/management/accounts">账户管理</el-menu-item>
         <el-menu-item index="/management/strategies">策略管理</el-menu-item>
         <el-menu-item index="/management/tags">标签管理</el-menu-item>
