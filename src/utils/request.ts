@@ -31,11 +31,20 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   (response: AxiosResponse<ApiResponse<any>>) => {
     const res = response.data
-    if (res.code === 401) {
+    // 兼容某些服务返回外层包装（含 body 字符串）的 401 未授权
+    let innerCode: number | undefined
+    const body = (res as any)?.body
+    if (typeof body === 'string') {
+      try {
+        const inner = JSON.parse(body)
+        innerCode = inner?.code
+      } catch {}
+    }
+    if (res.code === 401 || innerCode === 401) {
       // 未授权：清除 token 并跳转登录
       localStorage.removeItem(TOKEN_KEY)
       router.replace('/login')
-      return Promise.reject(new Error(res.msg || '未授权'))
+      return Promise.reject(new Error((res as any).msg || '未授权'))
     }
     // 返回原始响应，后续由封装函数提取 data
     return response

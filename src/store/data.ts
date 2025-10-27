@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { getAccountList } from '@/api/account'
-import { getStrategyList } from '@/api/strategy'
+import { getAllStrategies } from '@/api/strategy'
 import { getTagList } from '@/api/tag'
 import type { Account, Strategy, Tag } from '@/types/trade'
 
@@ -36,7 +36,7 @@ export const useDataStore = defineStore('data', {
     },
     async fetchStrategies(force = false) {
       if (!force && this.strategies.length) return
-      const res = await getStrategyList()
+      const res = await getAllStrategies()
       this.strategies = res.data?.items || []
     },
     async fetchTags(force = false) {

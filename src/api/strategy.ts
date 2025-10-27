@@ -53,3 +53,23 @@ export const deleteStrategy = (id: number | string): Promise<ApiResponse<null>> 
     method: 'delete'
   })
 }
+
+export const getAllStrategies = (): Promise<ApiResponse<Paginated<Strategy>>> => {
+  return request<{ strategiess: any[] }>({
+    url: '/strategies/all',
+    method: 'get'
+  }).then((res) => {
+    const items: Strategy[] = (res.data?.strategiess || []).map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      description: s.description,
+      created_at: s.createdAt,
+      updated_at: s.updatedAt
+    }))
+    return {
+      code: res.code,
+      msg: res.msg,
+      data: { items, total: items.length }
+    }
+  })
+}
