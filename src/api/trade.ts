@@ -103,13 +103,17 @@ export const deleteTrade = (id: number | string): Promise<ApiResponse<null>> => 
   return request<null>({ url: `/trades/${id}`, method: 'delete' })
 }
 
-// 批量查询 tradeTags：POST /tradeTags/list（可选，用于补充 tags）
+// 批量查询 tradeTags：POST /tradeTags/all（通过前端过滤 tradeIDs）
 export const getTradeTagsByTradeIds = (tradeIds: Array<number | string>): Promise<ApiResponse<{ items: { tradeID: number; tagID: number }[] }>> => {
-  const columns = [
-    { name: 'tradeID', exp: 'in', value: tradeIds }
-  ]
-  return request<{ tradeTags: { tradeID: number; tagID: number }[] }>({ url: '/tradeTags/list', method: 'post', data: { page: 0, limit: tradeIds.length, columns } }).then((res) => {
-    const items = (res.data?.tradeTags || []).map((x) => ({ tradeID: x.tradeID, tagID: x.tagID }))
+  const idSet = new Set(tradeIds.map((v) => Number(v)))
+  return request<{ tradeTags: { tradeID: number; tagID: number }[] }>({
+    url: '/tradeTags/all',
+    method: 'post',
+    data: {}
+  }).then((res) => {
+    const items = (res.data?.tradeTags || [])
+      .filter((x) => idSet.has(Number(x.tradeID)))
+      .map((x) => ({ tradeID: x.tradeID, tagID: x.tagID }))
     return { code: res.code, msg: res.msg, data: { items } }
   })
 }
@@ -130,4 +134,20 @@ export const getSnapshotsByTradeId = (tradeID: number | string): Promise<ApiResp
 
 export const createSnapshot = (tradeID: number, imageURL: string, type: string): Promise<ApiResponse<{ id: number }>> => {
   return request<{ id: number }>({ url: '/snapshots', method: 'post', data: { tradeID, imageURL, type } })
+}
+
+export const getAllTradeTags = (): Promise<ApiResponse<{ items: { tradeID: number; tagID: number; createdAt?: string; updatedAt?: string }[] }>> => {
+  return request<{ tradeTags: { tradeID: number; tagID: number; createdAt?: string; updatedAt?: string }[] }>({
+    url: '/tradeTags/all',
+    method: 'post',
+    data: {}
+  }).then((res) => {
+    const items = (res.data?.tradeTags || []).map((x) => ({
+      tradeID: x.tradeID,
+      tagID: x.tagID,
+      createdAt: x.createdAt,
+      updatedAt: x.updatedAt
+    }))
+    return { code: res.code, msg: res.msg, data: { items } }
+  })
 }

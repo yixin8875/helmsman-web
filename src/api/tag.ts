@@ -26,6 +26,27 @@ export const getTagList = (params?: ListParams): Promise<ApiResponse<Paginated<T
   })
 }
 
+// 获取全部标签：GET /tags/list/all，返回完整标签数组（无分页）
+export const getAllTags = (): Promise<ApiResponse<Paginated<Tag>>> => {
+  return request<{ tagss: any[] }>({
+    url: '/tags/list/all',
+    method: 'get'
+  }).then((res) => {
+    const items: Tag[] = (res.data?.tagss || []).map((t: any) => ({
+      id: t.id,
+      name: t.name,
+      color: t.color,
+      created_at: t.createdAt,
+      updated_at: t.updatedAt
+    }))
+    return {
+      code: res.code,
+      msg: res.msg,
+      data: { items, total: items.length }
+    }
+  })
+}
+
 // 定义与后端 UpdateTagsByIDRequest 对齐的请求体
 export interface UpdateTagRequest {
   id?: number
