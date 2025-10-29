@@ -133,7 +133,8 @@ export const getSnapshotsByTradeId = (tradeID: number | string): Promise<ApiResp
 }
 
 export const createSnapshot = (tradeID: number, imageURL: string, type: string): Promise<ApiResponse<{ id: number }>> => {
-  return request<{ id: number }>({ url: '/snapshots', method: 'post', data: { tradeID, imageURL, type } })
+  // 后端对 /snapshots 进行 307 重定向到 /snapshots/，直接使用带尾斜杠的路径以避免重定向导致的代理 EPIPE
+  return request<{ id: number }>({ url: '/snapshots/', method: 'post', data: { tradeID, imageURL, type } })
 }
 
 export const getAllTradeTags = (): Promise<ApiResponse<{ items: { tradeID: number; tagID: number; createdAt?: string; updatedAt?: string }[] }>> => {
